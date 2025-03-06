@@ -21,7 +21,6 @@ public class App {
 	public static void main(String[] args) {
 		int[][] field = new int[9][9];
 		freeSlots = new HashSet<String>();
-		possibleValuesPerSlot = new HashMap<String, List<Integer>>();
 		br = new BufferedReader(new InputStreamReader(System.in));
 
 		System.out.println("Introduce the sudoku field: ");
@@ -29,20 +28,32 @@ public class App {
 //		populateField(field);
 
 		field = new int[][] { 
-			{ 0, 0, 9, 9, 2, 6, 0, 4, 5 }, 
-			{ 0, 0, 8, 8, 0, 0, 7, 2, 0 },
-			{ 2, 0, 4, 4, 0, 3, 8, 0, 1 }, 
+			{ 0, 0, 0, 9, 2, 6, 0, 4, 5 }, 
+			{ 0, 0, 9, 8, 0, 0, 7, 2, 0 },
+			{ 2, 0, 6, 4, 0, 3, 8, 0, 1 }, 
 			{ 7, 6, 0, 0, 0, 0, 0, 3, 0 }, 
-			{ 0, 9, 0, 0, 0, 0, 1, 6, 0 },
+			{ 0, 9, 8, 0, 0, 0, 1, 6, 0 },
 			{ 1, 0, 0, 0, 0, 5, 4, 7, 9 }, 
 			{ 0, 0, 0, 0, 6, 8, 9, 0, 3 }, 
 			{ 0, 1, 5, 0, 4, 0, 0, 0, 0 },
 			{ 6, 0, 3, 0, 0, 0, 0, 5, 4 } };
 
+		for (int y = 0; y < 9; y++) {
+			for (int x = 0; x < 9; x++) {
+				if (field[x][y] == 0) {
+					freeSlots.add(x + "-" + y);
+				}
+			}
+		}
+
+		printField(field, -1, -1);
+		
 		long time = System.nanoTime();
 
 		Set<String> slotsToRemove = new HashSet<String>();
 		while (freeSlots.size() > 0) {
+			possibleValuesPerSlot = new HashMap<String, List<Integer>>();
+			
 			for (String slot : freeSlots) {
 				int xaxis = Integer.parseInt(slot.split("-")[0]);
 				int yaxis = Integer.parseInt(slot.split("-")[1]);
