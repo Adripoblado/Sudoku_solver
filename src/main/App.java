@@ -27,33 +27,41 @@ public class App {
 
 //		populateField(field);
 
-		field = new int[][] { 
-			{ 0, 0, 0, 9, 2, 6, 0, 4, 5 }, 
-			{ 0, 0, 9, 8, 0, 0, 7, 2, 0 },
-			{ 2, 0, 6, 4, 0, 3, 8, 0, 1 }, 
-			{ 7, 6, 0, 0, 0, 0, 0, 3, 0 }, 
-			{ 0, 9, 8, 0, 0, 0, 1, 6, 0 },
-			{ 1, 0, 0, 0, 0, 5, 4, 7, 9 }, 
-			{ 0, 0, 0, 0, 6, 8, 9, 0, 3 }, 
-			{ 0, 1, 5, 0, 4, 0, 0, 0, 0 },
-			{ 6, 0, 3, 0, 0, 0, 0, 5, 4 } };
+//		field = new int[][] { 
+//			{ 0, 0, 0, 9, 2, 6, 0, 4, 5 }, 
+//			{ 0, 0, 9, 8, 0, 0, 7, 2, 0 },
+//			{ 2, 0, 6, 4, 0, 3, 8, 0, 1 }, 
+//			{ 7, 6, 0, 0, 0, 0, 0, 3, 0 }, 
+//			{ 0, 9, 8, 0, 0, 0, 1, 6, 0 },
+//			{ 1, 0, 0, 0, 0, 5, 4, 7, 9 }, 
+//			{ 0, 0, 0, 0, 6, 8, 9, 0, 3 }, 
+//			{ 0, 1, 5, 0, 4, 0, 0, 0, 0 },
+//			{ 6, 0, 3, 0, 0, 0, 0, 5, 4 } };
+
+		field = new int[][] { { 0, 0, 2, 0, 0, 6, 0, 0, 0 }, { 0, 4, 0, 0, 1, 8, 0, 9, 6 },
+				{ 0, 0, 6, 7, 0, 0, 0, 8, 0 }, { 2, 0, 0, 0, 0, 0, 8, 0, 1 }, { 0, 8, 0, 5, 3, 0, 6, 0, 0 },
+				{ 0, 0, 0, 0, 2, 0, 5, 4, 0 }, { 0, 7, 0, 9, 0, 0, 0, 1, 5 }, { 0, 0, 9, 0, 0, 0, 0, 0, 0 },
+				{ 5, 6, 0, 0, 0, 4, 0, 0, 0 } };
 
 		for (int y = 0; y < 9; y++) {
 			for (int x = 0; x < 9; x++) {
 				if (field[x][y] == 0) {
-					freeSlots.add(x + "-" + y);
+					int xIndex = x / 3;
+					int yIndex = (y / 3) * 3;
+
+					freeSlots.add(x + "-" + y + "-" + String.valueOf(xIndex + yIndex));
 				}
 			}
 		}
 
 		printField(field, -1, -1);
-		
+
 		long time = System.nanoTime();
 
 		Set<String> slotsToRemove = new HashSet<String>();
 		while (freeSlots.size() > 0) {
 			possibleValuesPerSlot = new HashMap<String, List<Integer>>();
-			
+
 			for (String slot : freeSlots) {
 				int xaxis = Integer.parseInt(slot.split("-")[0]);
 				int yaxis = Integer.parseInt(slot.split("-")[1]);
@@ -71,9 +79,27 @@ public class App {
 					slotsToRemove.add(coords);
 				}
 			} else {
-				printField(field, -1, -1);
-				System.err.println("No more unique values for any field");
-				System.exit(0);
+				int count = 0;
+				for (int i = 0; i < 9; i++) {
+					Map<String, Integer> slotIndexList = getUniqueValuesOnBlock(possibleValuesPerSlot, i);
+					if (slotIndexList.size() > 0) {
+						count++;
+						freeSlots.removeAll(slotIndexList.keySet());
+						
+						for (String slotIndex : slotIndexList.keySet()) {
+							int xaxis = Integer.parseInt(slotIndex.split("-")[0]);
+							int yaxis = Integer.parseInt(slotIndex.split("-")[1]);
+							
+							field[xaxis][yaxis] = slotIndexList.get(slotIndex);
+						}
+					}
+				}
+
+				if (count == 0) {
+					printField(field, -1, -1);
+					System.err.println("No more unique values for any field");
+					System.exit(0);
+				}
 			}
 
 			freeSlots.removeAll(slotsToRemove);
@@ -82,6 +108,40 @@ public class App {
 
 		System.out.println("AC: " + (System.nanoTime() - time));
 		printField(field, -1, -1);
+	}
+
+	private static Map<String, Integer> getUniqueValuesOnBlock(Map<String, List<Integer>> slotValues, int blockIndex) {
+		Map<String, List<Integer>> blockValues = new HashMap<String, List<Integer>>();
+
+		for (String slotIndex : slotValues.keySet()) {
+			if (Integer.parseInt(slotIndex.split("-")[2]) == blockIndex) {
+				blockValues.put(slotIndex, slotValues.get(slotIndex));
+			}
+		}
+
+		return findUniqueValuePosition(blockValues);
+	}
+
+	private static Map<String, Integer> findUniqueValuePosition(Map<String, List<Integer>> block) {
+		Map<String, Integer> uniqueValueSlotIndexList = new HashMap<String, Integer>();
+		Map<Integer, Integer> occurrences = new HashMap<>();
+
+		for (List<Integer> values : block.values()) {
+			for (int value : values) {
+				occurrences.put(value, occurrences.getOrDefault(value, 0) + 1);
+			}
+		}
+
+		for (Map.Entry<String, List<Integer>> entry : block.entrySet()) {
+			String position = entry.getKey();
+			for (int value : entry.getValue()) {
+				if (occurrences.get(value) == 1) {
+					uniqueValueSlotIndexList.put(position, value);
+				}
+			}
+		}
+
+		return uniqueValueSlotIndexList;
 	}
 
 	private static List<Integer> calculateOptions(int[][] field, int xaxis, int yaxis) {
