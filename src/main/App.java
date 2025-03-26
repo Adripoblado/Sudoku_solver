@@ -4,22 +4,20 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class App {
-
 	static BufferedReader br;
 	static Set<String> freeSlots;
 	static Map<String, List<Integer>> possibleValuesPerSlot;
+	static int[][] field;
 
 	public static void main(String[] args) {
-		int[][] field = new int[9][9];
+		field = new int[9][9];
 		freeSlots = new HashSet<String>();
 		br = new BufferedReader(new InputStreamReader(System.in));
 
@@ -27,22 +25,37 @@ public class App {
 
 //		populateField(field);
 
-//		field = new int[][] { 
-//			{ 0, 0, 0, 9, 2, 6, 0, 4, 5 }, 
-//			{ 0, 0, 9, 8, 0, 0, 7, 2, 0 },
-//			{ 2, 0, 6, 4, 0, 3, 8, 0, 1 }, 
-//			{ 7, 6, 0, 0, 0, 0, 0, 3, 0 }, 
-//			{ 0, 9, 8, 0, 0, 0, 1, 6, 0 },
-//			{ 1, 0, 0, 0, 0, 5, 4, 7, 9 }, 
-//			{ 0, 0, 0, 0, 6, 8, 9, 0, 3 }, 
-//			{ 0, 1, 5, 0, 4, 0, 0, 0, 0 },
-//			{ 6, 0, 3, 0, 0, 0, 0, 5, 4 } };
+//		field = new int[][] { { 0, 0, 0, 9, 2, 6, 0, 4, 5 }, { 0, 0, 9, 8, 0, 0, 7, 2, 0 },
+//				{ 2, 0, 6, 4, 0, 3, 8, 0, 1 }, { 7, 6, 0, 0, 0, 0, 0, 3, 0 }, { 0, 9, 8, 0, 0, 0, 1, 6, 0 },
+//				{ 1, 0, 0, 0, 0, 5, 4, 7, 9 }, { 0, 0, 0, 0, 6, 8, 9, 0, 3 }, { 0, 1, 5, 0, 4, 0, 0, 0, 0 },
+//				{ 6, 0, 3, 0, 0, 0, 0, 5, 4 } };
 
-		field = new int[][] { { 0, 0, 2, 0, 0, 6, 0, 0, 0 }, { 0, 4, 0, 0, 1, 8, 0, 9, 6 },
-				{ 0, 0, 6, 7, 0, 0, 0, 8, 0 }, { 2, 0, 0, 0, 0, 0, 8, 0, 1 }, { 0, 8, 0, 5, 3, 0, 6, 0, 0 },
-				{ 0, 0, 0, 0, 2, 0, 5, 4, 0 }, { 0, 7, 0, 9, 0, 0, 0, 1, 5 }, { 0, 0, 9, 0, 0, 0, 0, 0, 0 },
-				{ 5, 6, 0, 0, 0, 4, 0, 0, 0 } };
+//		field = new int[][] { { 0, 0, 2, 0, 0, 6, 0, 0, 0 }, { 0, 4, 0, 0, 1, 8, 0, 9, 6 },
+//				{ 0, 0, 6, 7, 0, 0, 0, 8, 0 }, { 2, 0, 0, 0, 0, 0, 8, 0, 1 }, { 0, 8, 0, 5, 3, 0, 6, 0, 0 },
+//				{ 0, 0, 0, 0, 2, 0, 5, 4, 0 }, { 0, 7, 0, 9, 0, 0, 0, 1, 5 }, { 0, 0, 9, 0, 0, 0, 0, 0, 0 },
+//				{ 5, 6, 0, 0, 0, 4, 0, 0, 0 } };
 
+		field = new int[][] { { 0, 0, 8, 0, 0, 0, 0, 0, 4 }, { 0, 0, 0, 7, 0, 0, 0, 1, 0 },
+				{ 0, 0, 0, 0, 5, 2, 3, 0, 6 }, { 6, 0, 0, 9, 0, 0, 0, 3, 0 }, { 0, 0, 4, 0, 0, 1, 0, 0, 0 },
+				{ 2, 0, 9, 0, 3, 5, 0, 0, 0 }, { 9, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 6, 0, 0, 9, 4, 0 },
+				{ 4, 0, 0, 0, 0, 0, 0, 0, 2 } };
+
+		List<Block> blockList = arrangeValues();
+
+		while (freeSlots.size() > 0) {
+			printField(-1, -1);
+			solve(blockList);
+
+			blockList = arrangeValues();
+		}
+
+		long time = System.nanoTime();
+
+		System.out.println("AC: " + (System.nanoTime() - time));
+		printField(-1, -1);
+	}
+
+	private synchronized static List<Block> arrangeValues() {
 		for (int y = 0; y < 9; y++) {
 			for (int x = 0; x < 9; x++) {
 				if (field[x][y] == 0) {
@@ -54,130 +67,315 @@ public class App {
 			}
 		}
 
-		printField(field, -1, -1);
+		List<Block> blockList = new ArrayList<Block>();
+		int xsum = 0, ysum = 0;
+		for (int blockIndex = 0; blockIndex < 9; blockIndex++) {
+			int xaxis = blockIndex % 3;
+			int yaxis = blockIndex / 3;
+			Block block = new Block(xaxis, yaxis, "B");
 
-		long time = System.nanoTime();
-
-		Set<String> slotsToRemove = new HashSet<String>();
-		while (freeSlots.size() > 0) {
-			possibleValuesPerSlot = new HashMap<String, List<Integer>>();
-
-			for (String slot : freeSlots) {
-				int xaxis = Integer.parseInt(slot.split("-")[0]);
-				int yaxis = Integer.parseInt(slot.split("-")[1]);
-				possibleValuesPerSlot.put(slot, calculateOptions(field, xaxis, yaxis));
+			ysum = blockIndex / 3;
+			if (xsum == 9) {
+				xsum = 0;
 			}
 
-			Map<String, List<Integer>> sortedPVPS = sortByListSize(possibleValuesPerSlot, true);
+			for (int y = 0; y < 3; y++) {
+				for (int x = 0; x < 3; x++) {
+					int yIndex = y + (ysum * 3);
+					int xIndex = x + xsum;
 
-			if (sortedPVPS.size() > 0) {
-				for (String coords : sortedPVPS.keySet()) {
-					int xaxis = Integer.parseInt(coords.split("-")[0]);
-					int yaxis = Integer.parseInt(coords.split("-")[1]);
-
-					field[xaxis][yaxis] = sortedPVPS.get(coords).get(0);
-					slotsToRemove.add(coords);
+					Slot slot = new Slot(xIndex, yIndex, field[xIndex][yIndex]);
+					block.getSlots().add(slot);
 				}
-			} else {
-				int count = 0;
-				for (int i = 0; i < 9; i++) {
-					Map<String, Integer> slotIndexList = getUniqueValuesOnBlock(possibleValuesPerSlot, i);
-					if (slotIndexList.size() > 0) {
-						count++;
-						freeSlots.removeAll(slotIndexList.keySet());
-						
-						for (String slotIndex : slotIndexList.keySet()) {
-							int xaxis = Integer.parseInt(slotIndex.split("-")[0]);
-							int yaxis = Integer.parseInt(slotIndex.split("-")[1]);
-							
-							field[xaxis][yaxis] = slotIndexList.get(slotIndex);
+			}
+			xsum += 3;
+			blockList.add(block);
+		}
+
+		for (int x = 0; x < 9; x++) {
+			Block block = new Block("X");
+			for (int y = 0; y < 9; y++) {
+				block.getSlots().add(new Slot(x, y, field[x][y]));
+			}
+			blockList.add(block);
+		}
+
+		for (int y = 0; y < 9; y++) {
+			Block block = new Block("Y");
+			for (int x = 0; x < 9; x++) {
+				block.getSlots().add(new Slot(x, y, field[x][y]));
+			}
+			blockList.add(block);
+		}
+
+		return blockList;
+	}
+
+	private synchronized static void solve(List<Block> blockList) {
+		for (Block block : blockList) {
+			for (Slot slot : block.getSlots()) {
+				if (slot.getValue() < 1) {
+					slot.updatePossibleValues(calculateNotes(slot, blockList));
+				}
+			}
+		}
+
+		for (Block block : blockList) {
+			for (Slot slot : block.getSlots()) {
+				cleanNotes(slot, blockList);
+			}
+		}
+
+		for (Block block : blockList) {
+			checkNaked(block, 2);
+			checkNaked(block, 3);
+		}
+
+		int assignedValues = 0;
+		for (Block block : blockList) {
+			for (Slot slot : block.getSlots()) {
+				int fetchedValue = fetchUniqueValues(slot, block);
+				if (fetchedValue > 0) {
+					slot.assignValue(fetchedValue);
+					field[slot.getX()][slot.getY()] = fetchedValue;
+					assignedValues++;
+				}
+			}
+		}
+
+		if (assignedValues == 0) {
+			System.exit(0);
+		}
+	}
+
+	private synchronized static void cleanLines(List<Block> blockList) {
+		List<Block> squareBlocks = new ArrayList<Block>();
+		
+		for (Block block : blockList) {
+			if (block.getType().equals("B")) {
+				squareBlocks.add(block);
+			}
+		}
+		
+		List<String> lineList = new ArrayList<String>();
+		
+		for (int i = 1; i <= 9; i++) {
+			for (Block block : squareBlocks) {
+				int occurrences = getOccurrences(i, block);
+				
+				if (occurrences == 2 || occurrences == 3) {
+					String line = getLineIndex(i, block);
+					
+					if (line != null) {
+						lineList.add(line);
+					}
+				}
+			}
+		}
+//		If it doesn't contain any lines, skip
+		if (lineList.size() > 0) {
+			for (String line : lineList) {
+				int index = Integer.parseInt(line.substring(0, 1));
+				int blockIndex = index / 3;
+				String axis = line.substring(1, 2);
+				int value = Integer.parseInt(line.substring(2));
+				
+				for (Block block : squareBlocks) {
+					
+					if (axis.equals("X") && block.getX() == blockIndex) {
+						for (Slot slot : block.getSlots()) {
+							if (slot.getX() == index) {
+								slot.getPossibleValues().remove(value);
+							}
+						}
+					}
+					
+					if (axis.equals("Y") && block.getY() == blockIndex) {
+						for (Slot slot : block.getSlots()) {
+							if (slot.getY() == index) {
+								slot.getPossibleValues().remove(value);
+							}
 						}
 					}
 				}
-
-				if (count == 0) {
-					printField(field, -1, -1);
-					System.err.println("No more unique values for any field");
-					System.exit(0);
+			}
+		}
+	}
+	
+	private synchronized static String getLineIndex(int value, Block block) {
+//		Initialize both axis on -1 to identify whether they have been assigned a value or not
+		int xaxis = -1;
+		int yaxis = -1;
+//		Go through all slots checking if it contains the desired value
+		for (Slot slot : block.getSlots()) {
+			if (slot.getPossibleValues().contains(value)) {
+//				Skip first coincidence
+				if (xaxis == -1) {
+					xaxis = slot.getX();
+					yaxis = slot.getY();
+					continue;
+				}
+//				If axis changes set value to -2
+				if (xaxis != slot.getX()) {
+					xaxis = -2;
+				}
+				
+				if (yaxis != slot.getY()) {
+					yaxis = -2;
 				}
 			}
-
-			freeSlots.removeAll(slotsToRemove);
-			slotsToRemove.clear();
 		}
-
-		System.out.println("AC: " + (System.nanoTime() - time));
-		printField(field, -1, -1);
+		
+		String line = null;
+//		Use line String to put 1.- axis index, 2.- axis identification and 3.- slot value
+		if (xaxis != -2) {
+			line = String.valueOf(xaxis + "X" + value);
+		}
+		
+		if (yaxis != -2) {
+			line = String.valueOf(yaxis + "Y" + value);
+		}
+		
+		return line;
 	}
 
-	private static Map<String, Integer> getUniqueValuesOnBlock(Map<String, List<Integer>> slotValues, int blockIndex) {
-		Map<String, List<Integer>> blockValues = new HashMap<String, List<Integer>>();
+	private synchronized static int getOccurrences(int possibleValue, Block block) {
+		int occurrences = 0;
+		for (Slot s : block.getSlots()) {
+			if (s.getPossibleValues() == null) {
+				continue;
+			}
 
-		for (String slotIndex : slotValues.keySet()) {
-			if (Integer.parseInt(slotIndex.split("-")[2]) == blockIndex) {
-				blockValues.put(slotIndex, slotValues.get(slotIndex));
+			if (s.getPossibleValues().contains(possibleValue)) {
+				occurrences++;
 			}
 		}
 
-		return findUniqueValuePosition(blockValues);
+		return occurrences;
 	}
 
-	private static Map<String, Integer> findUniqueValuePosition(Map<String, List<Integer>> block) {
-		Map<String, Integer> uniqueValueSlotIndexList = new HashMap<String, Integer>();
-		Map<Integer, Integer> occurrences = new HashMap<>();
+	private synchronized static void checkNaked(Block block, int n) {
+//		Create a Set of integers to temporally store the possible values of a slot
+		Set<Integer> pairs = new HashSet<Integer>();
+		for (Slot slot : block.getSlots()) {
+//			Ignore solved slots
+			if (slot.getValue() > 0) {
+				continue;
+			}
+//			Get only n-sized slots (pairs or triples)
+			if (slot.getPossibleValues().size() == n) {
+				pairs.addAll(slot.getPossibleValues());
+//				Go through slots again, ignoring current Slot
+				for (Slot compareSlot : block.getSlots()) {
+					if (slot.equals(compareSlot) || compareSlot.getValue() > 0) {
+						continue;
+					}
+//					Check if possible values of each slot match with current slot possible values
+					if (compareSlot.getPossibleValues().size() == n
+							&& compareSlot.getPossibleValues().equals(slot.getPossibleValues())) {
+						System.err.println("Detected coincidence on " + n + " possible values on slot: "
+								+ slot.getCoords() + "(" + slot.printPossibleValues() + ") with slot "
+								+ compareSlot.getCoords() + " (" + compareSlot.printPossibleValues() + ")");
+//						Go through all slots again once we have a match and delete those values
+						for (Slot slotToClean : block.getSlots()) {
+							if (slotToClean.equals(slot) || slotToClean.equals(compareSlot)
+									|| slotToClean.getValue() > 0) {
+								continue;
+							}
 
-		for (List<Integer> values : block.values()) {
-			for (int value : values) {
+							slotToClean.getPossibleValues().removeAll(pairs);
+						}
+
+						return;
+					}
+				}
+			}
+		}
+	}
+
+	private synchronized static int fetchUniqueValues(Slot slot, Block block) {
+		if (slot.getPossibleValues() == null) {
+			return 0;
+		}
+
+		Map<Integer, Integer> occurrences = new HashMap<Integer, Integer>();
+
+		for (Slot s : block.getSlots()) {
+			if (s.getPossibleValues() == null) {
+				continue;
+			}
+
+			for (int value : s.getPossibleValues()) {
 				occurrences.put(value, occurrences.getOrDefault(value, 0) + 1);
 			}
 		}
 
-		for (Map.Entry<String, List<Integer>> entry : block.entrySet()) {
-			String position = entry.getKey();
-			for (int value : entry.getValue()) {
-				if (occurrences.get(value) == 1) {
-					uniqueValueSlotIndexList.put(position, value);
+		for (int value : slot.getPossibleValues()) {
+			if (occurrences.get(value) == 1) {
+				System.out.println("Unique Value on slot " + slot.getCoords() + ": " + value);
+				return (value);
+			}
+		}
+
+		return 0;
+	}
+
+	private synchronized static void cleanNotes(Slot slot, List<Block> blockList) {
+		List<Block> relatedBlocks = getBlocks(slot.getCoords(), blockList);
+
+		Set<Integer> possibleValues = slot.getPossibleValues();
+
+		if (possibleValues == null) {
+			return;
+		}
+
+		for (Block block : relatedBlocks) {
+			Block compareBlock = new Block(block.getX(), block.getY(), "N");
+			compareBlock.getSlots().addAll(block.getSlots());
+
+			compareBlock.getSlots().remove(slot);
+
+			possibleValues.removeAll(compareBlock.getAllValues());
+		}
+	}
+
+	private synchronized static void cleanLines(Block block) {
+
+	}
+
+	private synchronized static Set<Integer> calculateNotes(Slot slot, List<Block> blockList) {
+		Set<Integer> options = new HashSet<Integer>();
+		for (int i = 1; i <= 9; i++) {
+			options.add(i);
+		}
+
+		List<Block> relatedBlocks = getBlocks(slot.getCoords(), blockList);
+
+		for (Block block : relatedBlocks) {
+			for (int i = 1; i <= 9; i++) {
+				if (block.getAllValues().contains(i)) {
+					options.remove(i);
 				}
 			}
 		}
 
-		return uniqueValueSlotIndexList;
-	}
-
-	private static List<Integer> calculateOptions(int[][] field, int xaxis, int yaxis) {
-		List<Integer> options = new ArrayList<Integer>();
-
-		List<Integer> valuesOnXaxis = new ArrayList<Integer>();
-		List<Integer> valuesOnYaxis = new ArrayList<Integer>();
-
-		for (int x = 0; x < 9; x++) {
-			options.add(x + 1);
-			valuesOnYaxis.add(field[x][yaxis]);
-		}
-
-		for (int y = 0; y < 9; y++) {
-			valuesOnXaxis.add(field[xaxis][y]);
-		}
-
-		List<Integer> valuesOnBlock = new ArrayList<Integer>();
-
-		int startXaxis = (((xaxis / 3) + 1) * 3) - 2;
-		int startYaxis = (((yaxis / 3) + 1) * 3) - 2;
-
-		for (int y = startYaxis - 1; y < startYaxis + 2; y++) {
-			for (int x = startXaxis - 1; x < startXaxis + 2; x++) {
-				valuesOnBlock.add(field[x][y]);
-			}
-		}
-
-		options.removeAll(valuesOnBlock);
-		options.removeAll(valuesOnXaxis);
-		options.removeAll(valuesOnYaxis);
-
 		return options;
 	}
 
-	private static void populateField(int[][] field) {
+	private synchronized static List<Block> getBlocks(String index, List<Block> blockList) {
+		List<Block> sortedBlockList = new ArrayList<Block>();
+
+		for (Block block : blockList) {
+			if (block.containsSlot(index)) {
+				sortedBlockList.add(block);
+			}
+		}
+
+		return sortedBlockList;
+	}
+
+	@SuppressWarnings("unused")
+	private synchronized static void populateField(int[][] field) {
 		int add = 0;
 		boolean newParcel = false;
 		for (int y = 0; y <= 9; y++) {
@@ -192,7 +390,7 @@ public class App {
 					newParcel = false;
 				}
 
-				assignValue(field, x + add, y, true);
+				assignValue(x + add, y, true);
 
 				if (y > 0 && (y + 1) % 3 == 0 && x + add == 8) {
 					newParcel = true;
@@ -202,15 +400,15 @@ public class App {
 		}
 	}
 
-	private static void assignValue(int[][] field, int xaxis, int yaxis, boolean print) {
+	private synchronized static void assignValue(int xaxis, int yaxis, boolean print) {
 		if (print) {
-			printField(field, xaxis, yaxis);
+			printField(xaxis, yaxis);
 		}
 
 		int value = 0;
 
 		System.err.println("Possible Options: ");
-		List<Integer> possibleOptions = calculateOptions(field, xaxis, yaxis);
+		List<Integer> possibleOptions = null;// TODO: calculateOptions(xaxis, yaxis);
 
 		if (possibleOptions.size() == 0) {
 			System.err.println("There are no possible combinations with this field.");
@@ -235,14 +433,14 @@ public class App {
 		}
 
 		if (!possibleOptions.contains(value)) {
-			assignValue(field, xaxis, yaxis, false);
+			assignValue(xaxis, yaxis, false);
 			return;
 		}
 
 		field[xaxis][yaxis] = value;
 	}
 
-	private static void printField(int[][] field, int xaxis, int yaxis) {
+	private synchronized static void printField(int xaxis, int yaxis) {
 		System.out.println("-------------------------------");
 		for (int y = 0; y < 9; y++) {
 			for (int x = 0; x < 9; x++) {
@@ -271,20 +469,5 @@ public class App {
 			}
 		}
 		System.out.println("-------------------------------");
-	}
-
-	public static Map<String, List<Integer>> sortByListSize(Map<String, List<Integer>> map, boolean onlyUniqueValues) {
-		List<Map.Entry<String, List<Integer>>> list = new ArrayList<>(map.entrySet());
-		list.sort(Comparator.comparingInt(entry -> entry.getValue().size()));
-
-		Map<String, List<Integer>> sortedMap = new LinkedHashMap<>();
-		for (Map.Entry<String, List<Integer>> entry : list) {
-			if (onlyUniqueValues && entry.getValue().size() > 1) {
-				return sortedMap;
-			}
-			sortedMap.put(entry.getKey(), entry.getValue());
-		}
-
-		return sortedMap;
 	}
 }
