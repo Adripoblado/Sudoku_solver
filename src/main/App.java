@@ -126,6 +126,8 @@ public class App {
 			}
 		}
 
+//		cleanLines(blockList);
+		
 		for (Block block : blockList) {
 			checkNaked(block, 2);
 			checkNaked(block, 3);
@@ -144,56 +146,70 @@ public class App {
 		}
 
 		if (assignedValues == 0) {
+			printNotes(blockList);
 			System.exit(0);
 		}
 	}
 
 	private synchronized static void cleanLines(List<Block> blockList) {
 		List<Block> squareBlocks = new ArrayList<Block>();
-		
+
 		for (Block block : blockList) {
 			if (block.getType().equals("B")) {
 				squareBlocks.add(block);
 			}
 		}
-		
+
 		List<String> lineList = new ArrayList<String>();
-		
+
 		for (int i = 1; i <= 9; i++) {
 			for (Block block : squareBlocks) {
 				int occurrences = getOccurrences(i, block);
-				
+
 				if (occurrences == 2 || occurrences == 3) {
 					String line = getLineIndex(i, block);
 					
 					if (line != null) {
+						System.out.println("Line with 2 or 3 occurrences: " + line);
 						lineList.add(line);
-					}
+					} 
 				}
 			}
 		}
 //		If it doesn't contain any lines, skip
 		if (lineList.size() > 0) {
+			System.out.println("Some lines to remove...");
 			for (String line : lineList) {
 				int index = Integer.parseInt(line.substring(0, 1));
 				int blockIndex = index / 3;
 				String axis = line.substring(1, 2);
-				int value = Integer.parseInt(line.substring(2));
-				
+				int value = Integer.parseInt(line.substring(2, 3));
+
+				int xIndex = Integer.parseInt(line.substring(3, 4));
+				int yIndex = Integer.parseInt(line.substring(4));
 				for (Block block : squareBlocks) {
-					
+					if (block.getX() == xIndex && block.getY() == yIndex) {
+						continue;
+					}
+
 					if (axis.equals("X") && block.getX() == blockIndex) {
 						for (Slot slot : block.getSlots()) {
 							if (slot.getX() == index) {
-								slot.getPossibleValues().remove(value);
+//								System.out.println(slot.getCoords() + ": " + slot.printPossibleValues());
+//								System.out.println("Removing value: " + value);
+//								slot.getPossibleValues().remove(value);
+//								System.err.println(slot.printPossibleValues());
 							}
 						}
 					}
-					
+
 					if (axis.equals("Y") && block.getY() == blockIndex) {
 						for (Slot slot : block.getSlots()) {
 							if (slot.getY() == index) {
-								slot.getPossibleValues().remove(value);
+//								System.out.println(slot.getCoords() + ": " + slot.printPossibleValues());
+//								System.out.println("Removing value: " + value);
+//								slot.getPossibleValues().remove(value);
+//								System.err.println(slot.printPossibleValues());
 							}
 						}
 					}
@@ -201,15 +217,17 @@ public class App {
 			}
 		}
 	}
-	
+
 	private synchronized static String getLineIndex(int value, Block block) {
 //		Initialize both axis on -1 to identify whether they have been assigned a value or not
 		int xaxis = -1;
 		int yaxis = -1;
+		Slot s = null;
 //		Go through all slots checking if it contains the desired value
 		for (Slot slot : block.getSlots()) {
 			if (slot.getPossibleValues().contains(value)) {
 //				Skip first coincidence
+				s = slot;
 				if (xaxis == -1) {
 					xaxis = slot.getX();
 					yaxis = slot.getY();
@@ -219,7 +237,7 @@ public class App {
 				if (xaxis != slot.getX()) {
 					xaxis = -2;
 				}
-				
+
 				if (yaxis != slot.getY()) {
 					yaxis = -2;
 				}
@@ -227,15 +245,15 @@ public class App {
 		}
 		
 		String line = null;
-//		Use line String to put 1.- axis index, 2.- axis identification and 3.- slot value
+//		Use line String to put 1.- axis index, 2.- axis identification, 3.- slot value, 4.- block X axis and 5.- block Y axis
 		if (xaxis != -2) {
-			line = String.valueOf(xaxis + "X" + value);
+			line = String.valueOf(xaxis + "X" + value + "" + block.getX() + "" + block.getY());
 		}
-		
+
 		if (yaxis != -2) {
-			line = String.valueOf(yaxis + "Y" + value);
+			line = String.valueOf(yaxis + "Y" + value + "" + block.getX() + "" + block.getY());
 		}
-		
+
 		return line;
 	}
 
@@ -337,10 +355,6 @@ public class App {
 
 			possibleValues.removeAll(compareBlock.getAllValues());
 		}
-	}
-
-	private synchronized static void cleanLines(Block block) {
-
 	}
 
 	private synchronized static Set<Integer> calculateNotes(Slot slot, List<Block> blockList) {
@@ -469,5 +483,23 @@ public class App {
 			}
 		}
 		System.out.println("-------------------------------");
+	}
+	
+	private synchronized static void printNotes(List<Block> blockList) {
+		List<Block> blocks = new ArrayList<Block>();
+		
+		for (Block block : blockList) {
+			if (block.getType().equals("X")) {
+				blocks.add(block);
+			}
+		}
+		
+		int i = 1;
+		for (Block block : blocks) {
+			for (Slot slot : block.getSlots()) {
+				System.out.println(slot.printFormatNotes());
+			}
+			i++;
+		}
 	}
 }
