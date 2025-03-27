@@ -277,64 +277,23 @@ public class App {
 		return occurrences;
 	}
 
-	private synchronized static void checkNaked(Block block, int n) {
-//		Create a Set of integers to temporally store the possible values of a slot
-		Set<Integer> pairs = new HashSet<Integer>();
-		for (Slot slot : block.getSlots()) {
-//			Ignore solved slots
-			if (slot.getValue() > 0) {
-				continue;
-			}
-//			Get only n-sized slots (pairs or triples)
-			if (slot.getPossibleValues().size() == n) {
-				pairs.addAll(slot.getPossibleValues());
-//				Go through slots again, ignoring current Slot
-				for (Slot compareSlot : block.getSlots()) {
-					if (slot.equals(compareSlot) || compareSlot.getValue() > 0) {
-						continue;
-					}
-//					Check if possible values of each slot match with current slot possible values
-					if (compareSlot.getPossibleValues().size() == n
-							&& compareSlot.getPossibleValues().equals(slot.getPossibleValues())) {
-						System.err.println("Detected coincidence on " + n + " possible values on slot: "
-								+ slot.getCoords() + "(" + slot.printPossibleValues() + ") with slot "
-								+ compareSlot.getCoords() + " (" + compareSlot.printPossibleValues() + ")");
-//						Go through all slots again once we have a match and delete those values
-						for (Slot slotToClean : block.getSlots()) {
-							if (slotToClean.equals(slot) || slotToClean.equals(compareSlot)
-									|| slotToClean.getValue() > 0) {
-								continue;
-							}
-
-							StringBuilder sb = new StringBuilder();
-							for (int pv : pairs) {
-								sb.append(pv + " ");
-							}
-
-							System.out.println("Removing " + sb.toString() + " from slot " + slotToClean.getCoords());
-							slotToClean.getPossibleValues().removeAll(pairs);
-						}
-
-						return;
-					}
-				}
-			}
-		}
-	}
-
 	private synchronized static void removeNakedPairs(Block block, List<Block> blockList) {
+//		List that will contain both Slots in case any slots matches over 2 possible values
 		List<Slot> nakedPairs = new ArrayList<Slot>();
 
 		boolean exit = false;
+//		Go through all slots of the desired block
 		for (Slot slot : block.getSlots()) {
+//			Check if it has exactly two possible values //TODO: improve algorithm to find matches on more possibilities
 			if (slot.getPossibleValues().size() != 2) {
-				continue;
+				continue; // Discard those slots whose possibilities are not two by skipping them
 			}
+//			Once we have a slot with only two possibilities start the loop again to compare with all other slots
 			for (Slot compareSlot : block.getSlots()) {
 				if (compareSlot.equals(slot) || compareSlot.getPossibleValues().size() != 2) {
-					continue;
+					continue; // Same logic here
 				}
-
+//				If we have a different slot with matching possibilities add both to nakedPairs List and exit loop
 				if (slot.getPossibleValues().equals(compareSlot.getPossibleValues())) {
 					nakedPairs.add(slot);
 					nakedPairs.add(compareSlot);
@@ -342,29 +301,32 @@ public class App {
 					break;
 				}
 			}
+//			Exit container loop if loop2 was exited
 			if (exit) {
 				break;
 			}
 		}
-
+//		exit=true means that we have a match
 		if (exit) {
 			StringBuilder sb = new StringBuilder();
 			for (int pv : nakedPairs.get(0).getPossibleValues()) {
-				sb.append(pv + " ");
+				sb.append(pv + " "); // Print stuff... //TODO: remove
 			}
-			
+//			Create a list that contains all those Slots' coordinates where those two values have to be removed
 			List<String> affectedCoords = new ArrayList<String>();
+//			Search in all blocks
 			for (Block b : blockList) {
+//				Check if current block contains both slots so we can delete values on this block
 				if (b.containsSlot(nakedPairs.get(0).getCoords()) && b.containsSlot(nakedPairs.get(1).getCoords())) {
 					for (Slot slot : b.getSlots()) {
+//						Check if current Slot is not one of our matching Slot and add coordinates to List
 						if (!slot.getPossibleValues().equals(nakedPairs.get(0).getPossibleValues())) {
 							affectedCoords.add(slot.getCoords());
-//							slot.getPossibleValues().removeAll(nakedPairs.get(0).getPossibleValues());
 						}
 					}
 				}
 			}
-			
+//			Once we have our coordinates go through all blocks again and perform the removal
 			for (Block b : blockList) {
 				for (Slot s : b.getSlots()) {
 					if (affectedCoords.contains(s.getCoords())) {
