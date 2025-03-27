@@ -16,9 +16,9 @@ public class Block {
 		this.slotList = new ArrayList<Slot>();
 	}
 
-	public Block(String type) {
-		this.xaxis = -1;
-		this.yaxis = -1;
+	public Block(String type, int xaxis, int yaxis) {
+		this.xaxis = xaxis;
+		this.yaxis = yaxis;
 		this.type = type;
 		this.slotList = new ArrayList<Slot>();
 	}

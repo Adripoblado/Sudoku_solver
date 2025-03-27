@@ -43,7 +43,7 @@ public class App {
 		List<Block> blockList = arrangeValues();
 
 		while (freeSlots.size() > 0) {
-			printField(-1, -1);
+			Tools.printField(field, -1, -1);
 			solve(blockList);
 
 			blockList = arrangeValues();
@@ -52,7 +52,7 @@ public class App {
 		long time = System.nanoTime();
 
 		System.out.println("AC: " + (System.nanoTime() - time));
-		printField(-1, -1);
+		Tools.printField(field, -1, -1);
 	}
 
 	private synchronized static List<Block> arrangeValues() {
@@ -92,18 +92,22 @@ public class App {
 			blockList.add(block);
 		}
 
+		int yaxis = 0;
 		for (int x = 0; x < 9; x++) {
-			Block block = new Block("X");
+			Block block = new Block("X", x, yaxis);
 			for (int y = 0; y < 9; y++) {
 				block.getSlots().add(new Slot(x, y, field[x][y]));
+				yaxis = y;
 			}
 			blockList.add(block);
 		}
 
+		int xaxis = 0;
 		for (int y = 0; y < 9; y++) {
-			Block block = new Block("Y");
+			Block block = new Block("Y", xaxis, y);
 			for (int x = 0; x < 9; x++) {
 				block.getSlots().add(new Slot(x, y, field[x][y]));
+				xaxis = x;
 			}
 			blockList.add(block);
 		}
@@ -129,8 +133,9 @@ public class App {
 //		cleanLines(blockList);
 
 		for (Block block : blockList) {
-			checkNaked(block, 2);
-			checkNaked(block, 3);
+			removeNakedPairs(block, blockList);
+//			checkNaked(block, 2);
+//			checkNaked(block, 3);
 		}
 
 		int assignedValues = 0;
@@ -146,7 +151,7 @@ public class App {
 		}
 
 		if (assignedValues == 0) {
-			printNotes(blockList);
+			Tools.printNotes(blockList, 0);
 			System.exit(0);
 		}
 	}
@@ -301,10 +306,69 @@ public class App {
 								continue;
 							}
 
+							StringBuilder sb = new StringBuilder();
+							for (int pv : pairs) {
+								sb.append(pv + " ");
+							}
+
+							System.out.println("Removing " + sb.toString() + " from slot " + slotToClean.getCoords());
 							slotToClean.getPossibleValues().removeAll(pairs);
 						}
 
 						return;
+					}
+				}
+			}
+		}
+	}
+
+	private synchronized static void removeNakedPairs(Block block, List<Block> blockList) {
+		List<Slot> nakedPairs = new ArrayList<Slot>();
+
+		boolean exit = false;
+		for (Slot slot : block.getSlots()) {
+			if (slot.getPossibleValues().size() != 2) {
+				continue;
+			}
+			for (Slot compareSlot : block.getSlots()) {
+				if (compareSlot.equals(slot) || compareSlot.getPossibleValues().size() != 2) {
+					continue;
+				}
+
+				if (slot.getPossibleValues().equals(compareSlot.getPossibleValues())) {
+					nakedPairs.add(slot);
+					nakedPairs.add(compareSlot);
+					exit = true;
+					break;
+				}
+			}
+			if (exit) {
+				break;
+			}
+		}
+
+		if (exit) {
+			StringBuilder sb = new StringBuilder();
+			for (int pv : nakedPairs.get(0).getPossibleValues()) {
+				sb.append(pv + " ");
+			}
+			
+			List<String> affectedCoords = new ArrayList<String>();
+			for (Block b : blockList) {
+				if (b.containsSlot(nakedPairs.get(0).getCoords()) && b.containsSlot(nakedPairs.get(1).getCoords())) {
+					for (Slot slot : b.getSlots()) {
+						if (!slot.getPossibleValues().equals(nakedPairs.get(0).getPossibleValues())) {
+							affectedCoords.add(slot.getCoords());
+//							slot.getPossibleValues().removeAll(nakedPairs.get(0).getPossibleValues());
+						}
+					}
+				}
+			}
+			
+			for (Block b : blockList) {
+				for (Slot s : b.getSlots()) {
+					if (affectedCoords.contains(s.getCoords())) {
+						s.getPossibleValues().removeAll(nakedPairs.get(0).getPossibleValues());
 					}
 				}
 			}
@@ -416,7 +480,7 @@ public class App {
 
 	private synchronized static void assignValue(int xaxis, int yaxis, boolean print) {
 		if (print) {
-			printField(xaxis, yaxis);
+			Tools.printField(field, xaxis, yaxis);
 		}
 
 		int value = 0;
@@ -452,121 +516,5 @@ public class App {
 		}
 
 		field[xaxis][yaxis] = value;
-	}
-
-	private synchronized static void printField(int xaxis, int yaxis) {
-		System.out.println("-------------------------------");
-		for (int y = 0; y < 9; y++) {
-			for (int x = 0; x < 9; x++) {
-				if (x == 0) {
-					System.out.print("|");
-				}
-
-				if (x == xaxis && y == yaxis) {
-					System.out.print(" X ");
-				} else if (field[x][y] == 0) {
-					System.out.print(" - ");
-				} else {
-					System.out.print(" " + field[x][y] + " ");
-				}
-
-				if (x == 2 || x == 5) {
-					System.out.print("|");
-				}
-
-				if (x == 8) {
-					System.out.print("|\n");
-				}
-			}
-			if (y == 2 || y == 5) {
-				System.out.println("-------------------------------");
-			}
-		}
-		System.out.println("-------------------------------");
-	}
-
-	private synchronized static void printNotes(List<Block> blockList) {
-		List<Block> blocks = new ArrayList<Block>();
-
-		for (Block block : blockList) {
-			if (block.getType().equals("Y")) {
-				blocks.add(block);
-			}
-		}
-
-		List<Slot> arrangedSlots = new ArrayList<Slot>();
-		for (Block block : blocks) {
-			arrangedSlots.addAll(block.getSlots());
-		}
-
-		int count = 0;
-		StringBuilder sb1 = new StringBuilder();
-		StringBuilder sb2 = new StringBuilder();
-		StringBuilder sb3 = new StringBuilder();
-		for (int i = 1; i <= 3; i++) {
-			int x = 1;
-			for (Slot slot : arrangedSlots) {
-				if (count % 9 == 0) {
-					sb1.append("\n|");
-				}
-				sb1.append(slot.printFormatNotes(i));
-				sb1.append("|");
-				if(x % 3 == 0) {
-					sb1.append("|");
-				}
-				
-				count++;
-				x++;
-			}
-		}
-
-		for (int i = 4; i <= 6; i++) {
-			int x = 1;
-			for (Slot slot : arrangedSlots) {
-				if (count % 9 == 0) {
-					sb2.append("\n|");
-				}
-				sb2.append(slot.printFormatNotes(i));
-				sb2.append("|");
-				if(x % 3 == 0) {
-					sb2.append("|");
-				}
-				
-				count++;
-				x++;
-			}
-		}
-
-		for (int i = 7; i <= 9; i++) {
-			int x = 1;
-			for (Slot slot : arrangedSlots) {
-				if (count % 9 == 0) {
-					sb3.append("\n|");
-				}
-				sb3.append(slot.printFormatNotes(i));
-				sb3.append("|");
-				if(x % 3 == 0) {
-					sb3.append("|");
-				}
-				
-				count++;
-				x++;
-			}
-		}
-
-		String[] first = sb1.toString().split("\n");
-		String[] second = sb2.toString().split("\n");
-		String[] third = sb3.toString().split("\n");
-		
-		for (int i = 0; i <= 9; i++) {
-			System.out.println(first[i]);
-			System.out.println(second[i]);
-			System.out.println(third[i]);
-			if (i % 3 == 0) {
-				System.out.println("==============================================================================================");
-			} else {
-				System.out.println("----------------------------------------------------------------------------------------------");
-			}
-		}
 	}
 }
