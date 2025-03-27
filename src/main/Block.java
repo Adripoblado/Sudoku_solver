@@ -43,7 +43,7 @@ public class Block {
 
 		return values;
 	}
-
+	
 	public List<Slot> getSlots() {
 		return this.slotList;
 	}

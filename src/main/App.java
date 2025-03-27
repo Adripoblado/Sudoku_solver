@@ -127,7 +127,7 @@ public class App {
 		}
 
 //		cleanLines(blockList);
-		
+
 		for (Block block : blockList) {
 			checkNaked(block, 2);
 			checkNaked(block, 3);
@@ -168,11 +168,11 @@ public class App {
 
 				if (occurrences == 2 || occurrences == 3) {
 					String line = getLineIndex(i, block);
-					
+
 					if (line != null) {
 						System.out.println("Line with 2 or 3 occurrences: " + line);
 						lineList.add(line);
-					} 
+					}
 				}
 			}
 		}
@@ -243,7 +243,7 @@ public class App {
 				}
 			}
 		}
-		
+
 		String line = null;
 //		Use line String to put 1.- axis index, 2.- axis identification, 3.- slot value, 4.- block X axis and 5.- block Y axis
 		if (xaxis != -2) {
@@ -484,22 +484,89 @@ public class App {
 		}
 		System.out.println("-------------------------------");
 	}
-	
+
 	private synchronized static void printNotes(List<Block> blockList) {
 		List<Block> blocks = new ArrayList<Block>();
-		
+
 		for (Block block : blockList) {
-			if (block.getType().equals("X")) {
+			if (block.getType().equals("Y")) {
 				blocks.add(block);
 			}
 		}
-		
-		int i = 1;
+
+		List<Slot> arrangedSlots = new ArrayList<Slot>();
 		for (Block block : blocks) {
-			for (Slot slot : block.getSlots()) {
-				System.out.println(slot.printFormatNotes());
+			arrangedSlots.addAll(block.getSlots());
+		}
+
+		int count = 0;
+		StringBuilder sb1 = new StringBuilder();
+		StringBuilder sb2 = new StringBuilder();
+		StringBuilder sb3 = new StringBuilder();
+		for (int i = 1; i <= 3; i++) {
+			int x = 1;
+			for (Slot slot : arrangedSlots) {
+				if (count % 9 == 0) {
+					sb1.append("\n|");
+				}
+				sb1.append(slot.printFormatNotes(i));
+				sb1.append("|");
+				if(x % 3 == 0) {
+					sb1.append("|");
+				}
+				
+				count++;
+				x++;
 			}
-			i++;
+		}
+
+		for (int i = 4; i <= 6; i++) {
+			int x = 1;
+			for (Slot slot : arrangedSlots) {
+				if (count % 9 == 0) {
+					sb2.append("\n|");
+				}
+				sb2.append(slot.printFormatNotes(i));
+				sb2.append("|");
+				if(x % 3 == 0) {
+					sb2.append("|");
+				}
+				
+				count++;
+				x++;
+			}
+		}
+
+		for (int i = 7; i <= 9; i++) {
+			int x = 1;
+			for (Slot slot : arrangedSlots) {
+				if (count % 9 == 0) {
+					sb3.append("\n|");
+				}
+				sb3.append(slot.printFormatNotes(i));
+				sb3.append("|");
+				if(x % 3 == 0) {
+					sb3.append("|");
+				}
+				
+				count++;
+				x++;
+			}
+		}
+
+		String[] first = sb1.toString().split("\n");
+		String[] second = sb2.toString().split("\n");
+		String[] third = sb3.toString().split("\n");
+		
+		for (int i = 0; i <= 9; i++) {
+			System.out.println(first[i]);
+			System.out.println(second[i]);
+			System.out.println(third[i]);
+			if (i % 3 == 0) {
+				System.out.println("==============================================================================================");
+			} else {
+				System.out.println("----------------------------------------------------------------------------------------------");
+			}
 		}
 	}
 }

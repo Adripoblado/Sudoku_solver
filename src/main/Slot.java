@@ -34,22 +34,16 @@ public class Slot {
 		return sb.toString().trim();
 	}
 	
-	public String printFormatNotes() {
+	public String printFormatNotes(int n) {
 		StringBuilder sb = new StringBuilder();
 		
-		sb.append("|");
-		for (int i = 1; i <= 9; i++) {
+		for (int i = n; i <= n+2; i++) {
 			if (possibleValues.contains(i)) {
 				sb.append(" " + i + " ");
 			} else {
 				sb.append(" - ");
 			}
-			
-			if (i % 3 == 0) {
-				sb.append("|\n|");
-			}
 		}
-		sb.append("---------|");
 		
 		return sb.toString();
 	}
